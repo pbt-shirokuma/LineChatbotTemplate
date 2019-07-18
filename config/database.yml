@@ -48,8 +48,8 @@ test:
 #     url: <%= ENV['DATABASE_URL'] %>
 #
 production:
-  adapter: mysql2
-  encoding: utf8
+  adapter: postgresql
+  encoding: unicode
   pool: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
   username: <%= ENV.fetch("DB_PRD_USER") %>
   password: <%= ENV.fetch("DB_PRD_PASS") %>
