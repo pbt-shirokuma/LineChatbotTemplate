@@ -54,5 +54,6 @@ production:
   username: <%= ENV.fetch("DB_PRD_USER") %>
   password: <%= ENV.fetch("DB_PRD_PASS") %>
   host: <%= ENV.fetch("DB_PRD_HOST") %>
+  port: <%= ENV.fetch("DB_PRD_PORT") %>
   database: <%= ENV.fetch("DB_PRD_SCHEMA") %>
 
