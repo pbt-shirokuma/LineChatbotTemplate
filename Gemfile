@@ -13,6 +13,7 @@ gem 'aws-sdk-rails'
 gem 'line-bot-api'
 gem 'active_hash'
 gem 'json'
+gem 'uglifier'
 
 group :test do
   gem 'rspec-rails'
