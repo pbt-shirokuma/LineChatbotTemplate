@@ -14,10 +14,9 @@ ActiveRecord::Schema.define(version: 2019_07_03_082333) do
 
   create_table "messages", options: "ENGINE=InnoDB DEFAULT CHARSET=utf8", force: :cascade do |t|
     t.string "message_id"
+    t.string "message_type"
     t.text "request"
-    t.string "request_status"
-    t.text "responcse"
-    t.string "responce_status"
+    t.text "response"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
   end
