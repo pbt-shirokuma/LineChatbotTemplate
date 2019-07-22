@@ -2,7 +2,8 @@ class MessageController < ApplicationController
     
     require 'line/bot'
     require 'json'
-    
+    require 'aws-sdk-s3'
+    require 'date'
     
     protect_from_forgery :except => [:callback]
     
@@ -119,9 +120,15 @@ class MessageController < ApplicationController
                     
                     region = 'ap-northeast-1'
                     bucket_name = 'pbt-line-chatbot-tmp-strage'
-                    key = userId
-                    client = Aws::S3::Client.new(region: region)
-                    client.put_object(bucket: bucket_name, key: key, body: response.body) 
+                    key = userId+DateTime.now.strftime('%Y%m%d%H%M%S')
+                    s3_client = Aws::S3::Resource.new(
+                      region: 'ap-northeast-1',
+                      credentials: Aws::Credentials.new(
+                        ENV['ACCESS_KEY_ID'],
+                        ENV['SECRET_ACCESS_KEY']
+                      )
+                    )
+                    s3_client.bucket(bucket_name).object(key).put(body: response.body)
                     
                     message = {
                         type: 'text',
