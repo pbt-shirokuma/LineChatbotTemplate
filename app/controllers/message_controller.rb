@@ -25,23 +25,22 @@ class MessageController < ApplicationController
             render :status => 400 , :json => { error: "invalid_request" , error_description: "some parameters missed or invalid" }
             return
         end
-        
         events = client.parse_events_from(body)
         events.each do |event|
             
-            message_target = find_or_create_message_target(event)
+            userId = event['source']['userId']
             
             case event
             
             # follow Event
             when Line::Bot::Event::Follow
                 
-                followUser = User.find_by_line_id(message_target.id)
-                if followUser.n empty?
+                followUser = User.find_by_line_id(userId)
+                if followUser.nil?
                     # User regist
                     followUser = User.new
                     followUser.name = 'New User'
-                    followUser.line_id = message_target.id
+                    followUser.line_id = userId
                     followUser.status = '00'
                     
                     # follow message send
@@ -67,7 +66,7 @@ class MessageController < ApplicationController
             # Unfollow Event
             when Line::Bot::Event::Unfollow
                 
-                unfollowUser = User.find_by_line_id(message_target.id)
+                unfollowUser = User.find_by_line_id(userId)
                 unfollowUser.del_flg = true
                 unless unfollowUser.save
                     # error handle
@@ -120,7 +119,7 @@ class MessageController < ApplicationController
                     
                     region = 'ap-northeast-1'
                     bucket_name = 'pbt-line-chatbot-tmp-strage'
-                    key = event.userId
+                    key = userId
                     client = Aws::S3::Client.new(region: region)
                     client.put_object(bucket: bucket_name, key: key, body: response.body) 
                     

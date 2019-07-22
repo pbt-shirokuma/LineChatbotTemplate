@@ -37,7 +37,7 @@ RSpec.describe MessageController, type: :request do
       end
       
       it 'is received other message' do
-                headers = {
+        headers = {
           "Content-Type" => "application/json;charset=UTF-8",
           "X-Line-Signature" => "wvLkGQaEtkDd7xNa2vO7sAkcft9enB028BbCz/W57Jk="
         }
@@ -47,7 +47,41 @@ RSpec.describe MessageController, type: :request do
       end
         
     end
-  
+    
+    context 'follow event' do
+      it 'is new follower add' do
+        headers = {
+          "Content-Type" => "application/json;charset=UTF-8",
+          "X-Line-Signature" => "A2jhQOluPo1FUwhC7IUqot8W+tVBuYDBjwvpPl0Mw6s="
+        }
+        post callback_path, :params => IO.read(Rails.root.join("spec", "support", "follow_event.json" )) , :headers => headers
+        
+        expect(response.status).to eq(200)
+      end
+
+      it 'is block cancel' do
+        User.create(:name => 'Test User' , :line_id => 'U01c7d4ac06b42fb8c59c2a1256604a1d' , :status => '00' , :del_flg => true)
+        headers = {
+          "Content-Type" => "application/json;charset=UTF-8",
+          "X-Line-Signature" => "A2jhQOluPo1FUwhC7IUqot8W+tVBuYDBjwvpPl0Mw6s="
+        }
+        post callback_path, :params => IO.read(Rails.root.join("spec", "support", "follow_event.json" )) , :headers => headers
+        expect(response.status).to eq(200)
+      end
+    end
+    
+    context 'unfollow event' do
+      it 'is blocked' do
+        User.create(:name => 'Test User' , :line_id => 'U01c7d4ac06b42fb8c59c2a1256604a1d' , :status => '00' , :del_flg => false)
+        headers = {
+          "Content-Type" => "application/json;charset=UTF-8",
+          "X-Line-Signature" => "9N9xcqBaPCDsWLkga3pHb+SCyoETgU0FzOdOW93v/Ko="
+        }
+        post callback_path, :params => IO.read(Rails.root.join("spec", "support", "unfollow_event.json" )) , :headers => headers
+        expect(response.status).to eq(200)
+      end
+    end
+      
   end
 
 end
