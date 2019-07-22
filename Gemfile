@@ -9,6 +9,7 @@ gem "bootsnap", require: false
 gem "listen"
 gem 'puma'
 gem 'aws-sdk-rails'
+gem 'aws-sdk-s3'
 gem 'line-bot-api'
 gem 'active_hash'
 gem 'json'

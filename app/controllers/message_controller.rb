@@ -2,8 +2,7 @@ class MessageController < ApplicationController
     
     require 'line/bot'
     require 'json'
-    
-    
+    require 'aws-sdk-s3'
     protect_from_forgery :except => [:callback]
     
     def client
@@ -20,6 +19,7 @@ class MessageController < ApplicationController
         # 署名検証
         hash = OpenSSL::HMAC::digest(OpenSSL::Digest::SHA256.new, ENV["LINE_CHANNEL_SECRET"], body)
         signature = Base64.strict_encode64(hash)
+        puts signature
         req_signature = request.env['HTTP_X_LINE_SIGNATURE']
         unless signature.eql?(req_signature)
             render :status => 400 , :json => { error: "invalid_request" , error_description: "some parameters missed or invalid" }
@@ -120,8 +120,8 @@ class MessageController < ApplicationController
                     region = 'ap-northeast-1'
                     bucket_name = 'pbt-line-chatbot-tmp-strage'
                     key = userId
-                    client = Aws::S3::Client.new(region: region)
-                    client.put_object(bucket: bucket_name, key: key, body: response.body) 
+                    s3_client = Aws::S3::Client.new(region: region)
+                    s3_client.put_object(bucket: bucket_name, key: key, body: response.body) 
                     
                     message = {
                         type: 'text',

@@ -36,7 +36,7 @@ RSpec.describe MessageController, type: :request do
         expect(response.status).to eq(200)
       end
       
-      it 'is received other message' do
+      it 'is received sticker message' do
         headers = {
           "Content-Type" => "application/json;charset=UTF-8",
           "X-Line-Signature" => "wvLkGQaEtkDd7xNa2vO7sAkcft9enB028BbCz/W57Jk="
@@ -46,6 +46,15 @@ RSpec.describe MessageController, type: :request do
         expect(response.status).to eq(200)
       end
         
+      it 'is received image/video message' do
+        headers = {
+          "Content-Type" => "application/json;charset=UTF-8",
+          "X-Line-Signature" => "9AxZsLjm04Lnsco8vz4qYmMnIKtY8QeiAo4eDDNoCxw="
+        }
+        post callback_path, :params => IO.read(Rails.root.join("spec", "support", "image_message.json" )) , :headers => headers
+        
+        expect(response.status).to eq(200)
+      end
     end
     
     context 'follow event' do
