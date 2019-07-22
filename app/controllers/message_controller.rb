@@ -29,27 +29,49 @@ class MessageController < ApplicationController
         events = client.parse_events_from(body)
         events.each do |event|
             
+            userId = event['source']['userId']
+            
             case event
             
             # follow Event
             when Line::Bot::Event::Follow
                 
-                # User regist
-                followUser = User.new
-                followUser.name = 'New User'
-                followUser.line_id = event.source['userId']
-                followUser.status = '00'
-                unless followUser.save
-                    # error handle
+                followUser = User.find_by_line_id(userId)
+                if followUser.n empty?
+                    # User regist
+                    followUser = User.new
+                    followUser.name = 'New User'
+                    followUser.line_id = userId
+                    followUser.status = '00'
                     
-                end
-                
-                # follow message send
-                message = {
+                    # follow message send
+                    message = {
                         type: 'text',
                         text: 'フォローありがとう！'
                     }
+                else
+                    followUser.del_flg = false
+                    # follow message send
+                    message = {
+                        type: 'text',
+                        text: 'ブロ解ありがとう！'
+                    }
+                end
+                
+                unless followUser.save
+                    # error handle
+                end
+                
                 client.reply_message(event['replyToken'], message)
+            
+            # Unfollow Event
+            when Line::Bot::Event::Unfollow
+                
+                unfollowUser = User.find_by_line_id(userId)
+                unfollowUser.del_flg = true
+                unless unfollowUser.save
+                    # error handle
+                end
                 
             # Messgae Event
             when Line::Bot::Event::Message
@@ -58,7 +80,6 @@ class MessageController < ApplicationController
                 receiptMessage = Message.new
                 receiptMessage.message_id = event.message['id']
                 receiptMessage.message_type = event.message['type']
-                receiptMessage.response = ''
             
                 case event.type
                 # Text Message
@@ -99,7 +120,7 @@ class MessageController < ApplicationController
                     
                     region = 'ap-northeast-1'
                     bucket_name = 'pbt-line-chatbot-tmp-strage'
-                    key = event.userId
+                    key = userId
                     client = Aws::S3::Client.new(region: region)
                     client.put_object(bucket: bucket_name, key: key, body: response.body) 
                     
