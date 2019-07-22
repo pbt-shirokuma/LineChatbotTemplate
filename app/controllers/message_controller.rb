@@ -21,6 +21,7 @@ class MessageController < ApplicationController
         # 署名検証
         hash = OpenSSL::HMAC::digest(OpenSSL::Digest::SHA256.new, ENV["LINE_CHANNEL_SECRET"], body)
         signature = Base64.strict_encode64(hash)
+        puts signature
         req_signature = request.env['HTTP_X_LINE_SIGNATURE']
         unless signature.eql?(req_signature)
             render :status => 400 , :json => { error: "invalid_request" , error_description: "some parameters missed or invalid" }
@@ -118,7 +119,6 @@ class MessageController < ApplicationController
                 when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
                     response = client.get_message_content(event.message['id'])
                     
-                    region = 'ap-northeast-1'
                     bucket_name = 'pbt-line-chatbot-tmp-strage'
                     key = userId+DateTime.now.strftime('%Y%m%d%H%M%S')
                     s3_client = Aws::S3::Resource.new(
