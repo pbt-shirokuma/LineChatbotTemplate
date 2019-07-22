@@ -1,6 +1,9 @@
 class MessageController < ApplicationController
     
     require 'line/bot'
+    require 'json'
+    
+    
     protect_from_forgery :except => [:callback]
     
     def client
@@ -13,7 +16,6 @@ class MessageController < ApplicationController
     
     def callback
         body = request.body.read
-        puts body
         
         # 署名検証
         hash = OpenSSL::HMAC::digest(OpenSSL::Digest::SHA256.new, ENV["LINE_CHANNEL_SECRET"], body)
@@ -28,28 +30,90 @@ class MessageController < ApplicationController
         events.each do |event|
             
             case event
+            
+            # follow Event
+            when Line::Bot::Event::Follow
+                
+                # User regist
+                followUser = User.new
+                followUser.name = 'New User'
+                followUser.line_id = event.source['userId']
+                followUser.status = '00'
+                unless followUser.save
+                    # error handle
+                    
+                end
+                
+                # follow message send
+                message = {
+                        type: 'text',
+                        text: 'フォローありがとう！'
+                    }
+                client.reply_message(event['replyToken'], message)
+                
             # Messgae Event
             when Line::Bot::Event::Message
                 
+                # Message regist
+                receiptMessage = Message.new
+                receiptMessage.message_id = event.message['id']
+                receiptMessage.message_type = event.message['type']
+                receiptMessage.response = ''
+            
                 case event.type
                 # Text Message
                 when Line::Bot::Event::MessageType::Text
+                    
+                    receiptMessage.request = event.message['text']
+                    
                     message = {
                         type: 'text',
                         text: event.message['text'] + '...?'
                     }
                     client.reply_message(event['replyToken'], message)
+                    
+                    receiptMessage.response = message
+                    unless receiptMessage.save
+                        # error handle
+                    end
+                    
                 when Line::Bot::Event::MessageType::Sticker
+                    
+                    receiptMessage.request = 
+                        JSON.parse('{ "packageId":' + event.message['packageId'] + ',' + '"sickerId":' + event.message['stickerId'] + '}')
+                    
                     message = {
                         type: 'text',
                         text: 'いいスタンプだね！'
                     }
+                    
                     client.reply_message(event['replyToken'], message)
+                    receiptMessage.response = message
+                    unless receiptMessage.save
+                        # error handle
+                    end
+                    
                 # Image , Video Message
                 when Line::Bot::Event::MessageType::Image, Line::Bot::Event::MessageType::Video
                     response = client.get_message_content(event.message['id'])
-                    tf = Tempfile.open("content")
-                    tf.write(response.body)
+                    
+                    region = 'ap-northeast-1'
+                    bucket_name = 'pbt-line-chatbot-tmp-strage'
+                    key = event.userId
+                    client = Aws::S3::Client.new(region: region)
+                    client.put_object(bucket: bucket_name, key: key, body: response.body) 
+                    
+                    message = {
+                        type: 'text',
+                        text: '面白いね！'
+                    }
+                    
+                    client.reply_message(event['replyToken'], message)
+                    receiptMessage.response = message
+                    unless receiptMessage.save
+                        # error handle
+                    end
+                    
                 end
             end
         end
