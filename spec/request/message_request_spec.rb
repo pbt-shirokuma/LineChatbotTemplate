@@ -3,9 +3,11 @@ require 'rails_helper'
 # テストケース
 # ・署名が不正の場合：ステータス４００が返る
 # ・署名が正しく、テキストメッセージを受信した場合：ステータス２００を返す、受信したメッセージをそのまま返信する
-# ・署名が正しく、テキストメッセージ以外を受信した場合：ステータス２００を返す、特定のメッセージを返信する
-
-
+# ・署名が正しく、スタンプメッセージを受信した場合：ステータス２００を返す、特定のメッセージを返信する
+# ・署名が正しく、画像・動画メッセージを受信した場合：ステータス２００を返す、特定のメッセージを返信し、S3に保存する
+# ・署名が正しく、友達登録をされた場合：ステータス２００を返す、挨拶メッセージを送信する
+# ・署名が正しく、ブロックをされた場合：ステータス２００を返す、Userデータを削除する
+# ・署名が正しく、ブロックが解除された場合：ステータス２００を返す、挨拶メッセージを送信する
 
 RSpec.describe MessageController, type: :request do
   # describe: テスト対象
@@ -29,7 +31,7 @@ RSpec.describe MessageController, type: :request do
       it 'is received text message' do
         headers = {
           "Content-Type" => "application/json;charset=UTF-8",
-          "X-Line-Signature" => "W7JzRhzSx4GAbC5wMp3H27kR/lYtJugq0KkLCJj9ue4="
+          "X-Line-Signature" => "84N/Gua/DbFpe318+XEBFxvdrW6c3C1wJEX5s8XQXcU="
         }
         post callback_path, :params => IO.read(Rails.root.join("spec", "support", "text_message.json" )) , :headers => headers
         
@@ -39,7 +41,7 @@ RSpec.describe MessageController, type: :request do
       it 'is received sticker message' do
         headers = {
           "Content-Type" => "application/json;charset=UTF-8",
-          "X-Line-Signature" => "wvLkGQaEtkDd7xNa2vO7sAkcft9enB028BbCz/W57Jk="
+          "X-Line-Signature" => "e666e189Ayt6LX/eW/VHIeBzQNQLdnyBafHLJYl3Xhs="
         }
         post callback_path, :params => IO.read(Rails.root.join("spec", "support", "sticker_message.json" )) , :headers => headers
         
@@ -49,7 +51,7 @@ RSpec.describe MessageController, type: :request do
       it 'is received image/video message' do
         headers = {
           "Content-Type" => "application/json;charset=UTF-8",
-          "X-Line-Signature" => "9AxZsLjm04Lnsco8vz4qYmMnIKtY8QeiAo4eDDNoCxw="
+          "X-Line-Signature" => "l83WLZ3CZyHTDc3W43s7g4hrVz5rr8CLH0OKGTwC/ts="
         }
         post callback_path, :params => IO.read(Rails.root.join("spec", "support", "image_message.json" )) , :headers => headers
         
@@ -61,7 +63,7 @@ RSpec.describe MessageController, type: :request do
       it 'is new follower add' do
         headers = {
           "Content-Type" => "application/json;charset=UTF-8",
-          "X-Line-Signature" => "A2jhQOluPo1FUwhC7IUqot8W+tVBuYDBjwvpPl0Mw6s="
+          "X-Line-Signature" => "AQLg3h9hKidVQFNr5rr1oJPiF5fac7Jj9UNyWohU2dM="
         }
         post callback_path, :params => IO.read(Rails.root.join("spec", "support", "follow_event.json" )) , :headers => headers
         
@@ -69,10 +71,10 @@ RSpec.describe MessageController, type: :request do
       end
 
       it 'is block cancel' do
-        User.create(:name => 'Test User' , :line_id => 'U01c7d4ac06b42fb8c59c2a1256604a1d' , :status => '00' , :del_flg => true)
+        User.create(:name => 'Test User' , :line_id => 'U01c7d4ac06b42fb8c59c2a1256604ccc' , :status => '00' , :del_flg => true)
         headers = {
           "Content-Type" => "application/json;charset=UTF-8",
-          "X-Line-Signature" => "A2jhQOluPo1FUwhC7IUqot8W+tVBuYDBjwvpPl0Mw6s="
+          "X-Line-Signature" => "AQLg3h9hKidVQFNr5rr1oJPiF5fac7Jj9UNyWohU2dM="
         }
         post callback_path, :params => IO.read(Rails.root.join("spec", "support", "follow_event.json" )) , :headers => headers
         expect(response.status).to eq(200)
@@ -81,10 +83,10 @@ RSpec.describe MessageController, type: :request do
     
     context 'unfollow event' do
       it 'is blocked' do
-        User.create(:name => 'Test User' , :line_id => 'U01c7d4ac06b42fb8c59c2a1256604a1d' , :status => '00' , :del_flg => false)
+        User.create(:name => 'Test User' , :line_id => 'U01c7d4ac06b42fb8c59c2a1256604ccc' , :status => '00' , :del_flg => false)
         headers = {
           "Content-Type" => "application/json;charset=UTF-8",
-          "X-Line-Signature" => "9N9xcqBaPCDsWLkga3pHb+SCyoETgU0FzOdOW93v/Ko="
+          "X-Line-Signature" => "JPiOQpKDC1YgOUlA/rfTND5wwL2m/YQ4uOvpODgXOFw="
         }
         post callback_path, :params => IO.read(Rails.root.join("spec", "support", "unfollow_event.json" )) , :headers => headers
         expect(response.status).to eq(200)
